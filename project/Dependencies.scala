@@ -88,7 +88,7 @@ object Dependencies {
     "org.glassfish.jersey.test-framework" % "jersey-test-framework-core" % jerseyVersion % Test,
     "org.glassfish.jersey.test-framework.providers" % "jersey-test-framework-provider-grizzly2" % jerseyVersion % Test,
     "com.fasterxml.jackson.core" % "jackson-databind" % jacksonVersion,
-    "com.fasterxml.jackson.module" %% "jackson-module-scala" % jacksonVersion,
+    "com.fasterxml.jackson.module" %% "jackson-module-scala_2.11" % 2.11.0.rc1,
     "io.dropwizard.metrics" % "metrics-core" % "3.1.2",
     "io.dropwizard.metrics" % "metrics-healthchecks" % "3.1.2",
     "org.mockito" % "mockito-core" % "1.10.19" exclude ("org.hamcrest", "hamcrest-core"),
