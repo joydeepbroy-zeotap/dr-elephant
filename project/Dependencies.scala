@@ -25,7 +25,7 @@ object Dependencies {
   lazy val gsonVersion = "2.2.4"
   lazy val guavaVersion = "18.0"          // Hadoop by default uses Guava 11.0, might raise NoSuchMethodException
   lazy val jacksonMapperAslVersion = "1.7.3"
-  lazy val jacksonVersion = "2.5.3"
+  lazy val jacksonVersion = "2.10.3"
   lazy val jerseyVersion = "2.24"
   lazy val jsoupVersion = "1.7.3"
   lazy val mysqlConnectorVersion = "5.1.36"

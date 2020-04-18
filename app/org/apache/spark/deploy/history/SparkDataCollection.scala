@@ -17,20 +17,18 @@
 package org.apache.spark.deploy.history
 
 import java.io.InputStream
-import java.util.{Set => JSet, Properties, List => JList, HashSet => JHashSet, ArrayList => JArrayList}
+import java.util.{Properties, ArrayList => JArrayList, HashSet => JHashSet, List => JList, Set => JSet}
 
 import scala.collection.mutable
-
 import com.linkedin.drelephant.analysis.ApplicationType
 import com.linkedin.drelephant.spark.legacydata._
 import com.linkedin.drelephant.spark.legacydata.SparkExecutorData.ExecutorInfo
 import com.linkedin.drelephant.spark.legacydata.SparkJobProgressData.JobInfo
-
 import org.apache.spark.SparkConf
 import org.apache.spark.scheduler.{ApplicationEventListener, ReplayListenerBus, StageInfo}
 import org.apache.spark.storage.{RDDInfo, StorageStatus, StorageStatusListener, StorageStatusTrackingListener}
 import org.apache.spark.ui.env.EnvironmentListener
-import org.apache.spark.ui.exec.ExecutorsListener
+import org.apache.spark.ui.exec.{ExecutorTaskSummary, ExecutorsListener}
 import org.apache.spark.ui.jobs.JobProgressListener
 import org.apache.spark.ui.storage.StorageListener
 import org.apache.spark.util.collection.OpenHashSet
@@ -49,8 +47,8 @@ class SparkDataCollection extends SparkApplicationData {
   lazy val applicationEventListener = new ApplicationEventListener()
   lazy val jobProgressListener = new JobProgressListener(new SparkConf())
   lazy val environmentListener = new EnvironmentListener()
-  lazy val storageStatusListener = new StorageStatusListener()
-  lazy val executorsListener = new ExecutorsListener(storageStatusListener)
+  lazy val storageStatusListener = new StorageStatusListener(new SparkConf())
+  lazy val executorsListener = new ExecutorsListener(storageStatusListener,new SparkConf())
   lazy val storageListener = new StorageListener(storageStatusListener)
 
   // This is a customized listener that tracks peak used memory
@@ -164,10 +162,10 @@ class SparkDataCollection extends SparkApplicationData {
     if (_executorData == null) {
       _executorData = new SparkExecutorData()
 
-      for (statusId <- 0 until executorsListener.storageStatusList.size) {
+      for (statusId <- 0 until executorsListener.activeStorageStatusList.size) {
         val info = new ExecutorInfo()
 
-        val status = executorsListener.storageStatusList(statusId)
+        val status = executorsListener.activeStorageStatusList(statusId)
 
         info.execId = status.blockManagerId.executorId
         info.hostPort = status.blockManagerId.hostPort
@@ -178,14 +176,30 @@ class SparkDataCollection extends SparkApplicationData {
         info.memUsed = storageStatusTrackingListener.executorIdToMaxUsedMem.getOrElse(info.execId, 0L)
         info.maxMem = status.maxMem
         info.diskUsed = status.diskUsed
-        info.activeTasks = executorsListener.executorToTasksActive.getOrElse(info.execId, 0)
-        info.failedTasks = executorsListener.executorToTasksFailed.getOrElse(info.execId, 0)
-        info.completedTasks = executorsListener.executorToTasksComplete.getOrElse(info.execId, 0)
+
+        val summary =
+          executorsListener.executorToTaskSummary.get(info.execId)
+        summary match {
+          case Some(executorTaskSummary) =>
+            info.activeTasks = executorTaskSummary.tasksActive
+            info.failedTasks = executorTaskSummary.tasksFailed
+            info.completedTasks = executorTaskSummary.tasksComplete
+            info.duration = executorTaskSummary.duration
+            info.inputBytes = executorTaskSummary.inputBytes
+            info.shuffleRead = executorTaskSummary.shuffleRead
+            info.shuffleWrite = executorTaskSummary.shuffleWrite
+          case None =>
+            info.activeTasks = 0
+            info.failedTasks = 0
+            info.completedTasks = 0
+            info.totalTasks = info.activeTasks + info.failedTasks + info.completedTasks
+            info.duration = 0L
+            info.inputBytes = 0L
+            info.shuffleRead = 0L
+            info.shuffleWrite = 0L
+        }
+
         info.totalTasks = info.activeTasks + info.failedTasks + info.completedTasks
-        info.duration = executorsListener.executorToDuration.getOrElse(info.execId, 0L)
-        info.inputBytes = executorsListener.executorToInputBytes.getOrElse(info.execId, 0L)
-        info.shuffleRead = executorsListener.executorToShuffleRead.getOrElse(info.execId, 0L)
-        info.shuffleWrite = executorsListener.executorToShuffleWrite.getOrElse(info.execId, 0L)
 
         _executorData.setExecutorInfo(info.execId, info)
       }

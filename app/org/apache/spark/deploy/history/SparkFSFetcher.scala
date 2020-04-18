@@ -26,16 +26,8 @@ import com.linkedin.drelephant.spark.legacydata.SparkApplicationData
 import com.linkedin.drelephant.util.{HadoopUtils, SparkUtils, Utils}
 import org.apache.commons.io.FileUtils
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.log4j.Logger
 import org.apache.spark.SparkConf
-import org.apache.spark.scheduler.{ApplicationEventListener, ReplayListenerBus}
-import org.apache.spark.storage.{StorageStatusListener, StorageStatusTrackingListener}
-import org.apache.spark.ui.env.EnvironmentListener
-import org.apache.spark.ui.exec.ExecutorsListener
-import org.apache.spark.ui.jobs.JobProgressListener
-import org.apache.spark.ui.storage.StorageListener
-
 
 /**
  * A wrapper that replays Spark event history from files and then fill proper data objects.
